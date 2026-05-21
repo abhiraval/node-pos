@@ -1,0 +1,298 @@
+<%- include('header') %>
+
+<div class="container-fluid" style="padding-top: 100px;">
+    <main class="col-md-10 ms-sm-auto px-md-4 bg-light">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold text-dark">Inventory Management</h2>
+            <div class="badge bg-primary fs-6 shadow-sm">Total Items: <%= items.length %></div>
+        </div>
+
+        <div class="card border-0 shadow-sm p-3 mb-4">
+            <h6 class="fw-bold mb-3"><i class="bi bi-file-earmark-excel me-2 text-success"></i>Bulk Import Products</h6>
+            <form action="/inventory/import" method="POST" enctype="multipart/form-data">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <input type="file" name="file" class="form-control" required>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-upload me-1"></i> Import Excel
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="card border-0 shadow-sm p-4 mb-4">
+            <h6 class="fw-bold mb-3"><i class="bi bi-plus-circle me-2 text-primary"></i>Add New Product</h6>
+          <form id="addInventoryForm" class="row g-3">
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted">SKU</label>
+                    <input type="text" name="sku" class="form-control" placeholder="SKU" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted">Product Name</label>
+                    <input type="text" name="name" class="form-control" placeholder="Item Name" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted">Category</label>
+                    <input type="text" name="category" class="form-control" placeholder="Category">
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label small fw-bold text-muted">Cost (₹)</label>
+                    <input type="number" name="cost_price" class="form-control" placeholder="0.00" step="0.01" required>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label small fw-bold text-muted">Price (₹)</label>
+                    <input type="number" name="price" class="form-control" placeholder="0.00" required>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label small fw-bold text-muted">Stock</label>
+                    <input type="number" name="stock" class="form-control" placeholder="Qty" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted">Vendor</label>
+                    <select name="vendor_id" class="form-select" required>
+                        <option value="">Select Vendor</option>
+                        <% vendors.forEach(vendor => { %>
+                            <option value="<%= vendor.id %>"><%= vendor.name %></option>
+                        <% }) %>
+                    </select>
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold" id="addSubmitBtn">Add</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card border-0 shadow-sm overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 bg-white">
+                    <thead class="table-dark text-nowrap">
+                        <tr>
+                            <th class="ps-3">SKU</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Purchase Price</th>
+                            <th>Vendor</th>
+                            <th>Selling Price</th>
+                            <th>Stock</th>
+                            <th>Status</th>
+                            <th class="text-center pe-3">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% items.forEach(item => { %>
+                            <tr>
+                                <td class="ps-3 fw-bold text-secondary"><%= item.sku %></td>
+                                <td class="fw-bold"><%= item.name %></td>
+                                <td><span class="badge bg-light text-dark border"><%= item.category %></span></td>
+                                <td>₹ <%= parseFloat(item.cost_price || 0).toFixed(2) %></td>
+                                <td class="text-primary fw-semibold">
+                                    <i class="bi bi-shop me-1"></i><%= item.vendor_name || 'No Vendor' %>
+                                </td>
+                                <td>₹ <%= parseFloat(item.price).toFixed(2) %></td>
+                                <td class="fw-bold"><%= item.stock %></td>
+                                <td>
+                                    <span class="badge <%= item.stock > 10 ? 'bg-success' : (item.stock > 0 ? 'bg-warning' : 'bg-danger text-white') %>">
+                                        <%= item.stock > 10 ? 'In Stock' : (item.stock > 0 ? 'Low Stock' : 'Out of Stock') %>
+                                    </span>
+                                </td>
+                                <td class="text-center pe-3 text-nowrap">
+                                    <div class="btn-group shadow-sm">
+                                        <button type="button" class="btn btn-sm btn-warning edit-button" 
+                                            data-id="<%= item.id %>" 
+                                            data-sku="<%= item.sku %>" 
+                                            data-name="<%= item.name %>" 
+                                            data-category="<%= item.category %>" 
+                                            data-cost="<%= item.cost_price %>"
+                                            data-price="<%= item.price %>" 
+                                            data-stock="<%= item.stock %>"
+                                            data-vendor="<%= item.vendor_id %>">
+                                            <i class="bi bi-pencil-square"></i> Edit
+                                        </button>
+                                        <a href="/inventory/delete/<%= item.id %>" class="btn btn-danger btn-sm" onclick="return confirm('Permanently delete this item?')">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <form method="POST" id="editForm">
+                    <div class="modal-content border-0 shadow-lg">
+                        <div class="modal-header bg-warning text-dark">
+                            <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2"></i>Edit Product</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="row g-3">
+                                <div class="col-md-6 mb-2">
+                                    <label class="form-label small fw-bold text-muted text-uppercase">SKU</label>
+                                    <input type="text" name="sku" id="editSku" class="form-control" required>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <label class="form-label small fw-bold text-muted text-uppercase">Product Name</label>
+                                    <input type="text" name="name" id="editName" class="form-control" required>
+                                </div>
+                                <div class="col-md-12 mb-2">
+                                    <label class="form-label small fw-bold text-muted text-uppercase">Category</label>
+                                    <input type="text" name="category" id="editCategory" class="form-control">
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <label class="form-label small fw-bold text-muted text-uppercase">Cost Price (₹)</label>
+                                    <input type="number" name="cost_price" id="editCostPrice" class="form-control" step="0.01" required>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <label class="form-label small fw-bold text-muted text-uppercase">Selling Price (₹)</label>
+                                    <input type="number" name="price" id="editPrice" class="form-control" step="0.01" required>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <label class="form-label small fw-bold text-muted text-uppercase">Current Stock</label>
+                                    <input type="number" name="stock" id="editStock" class="form-control" required>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <label class="form-label small fw-bold text-muted text-uppercase">Vendor</label>
+                                    <select name="vendor_id" id="editVendor" class="form-select" required>
+                                        <option value="">Select Vendor</option>
+                                        <% vendors.forEach(vendor => { %>
+                                            <option value="<%= vendor.id %>"><%= vendor.name %></option>
+                                        <% }) %>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-light border-0">
+                            <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-warning fw-bold px-4">Update Item</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+</div>
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="posToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="toastMessage"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener('click', function (event) {
+        const editBtn = event.target.closest('.edit-button');
+        if (editBtn) {
+            event.preventDefault();
+
+            // Populate Modal using data- attributes
+            document.getElementById('editSku').value = editBtn.getAttribute('data-sku');
+            document.getElementById('editName').value = editBtn.getAttribute('data-name');
+            document.getElementById('editCategory').value = editBtn.getAttribute('data-category');
+            document.getElementById('editCostPrice').value = editBtn.getAttribute('data-cost');
+            document.getElementById('editPrice').value = editBtn.getAttribute('data-price');
+            document.getElementById('editStock').value = editBtn.getAttribute('data-stock');
+
+            // Select the correct Vendor in the dropdown
+            const vendorId = editBtn.getAttribute('data-vendor');
+            const vendorSelect = document.getElementById('editVendor');
+            if (vendorSelect) {
+                vendorSelect.value = vendorId;
+            }
+
+            // Set dynamic form action
+            const id = editBtn.getAttribute('data-id');
+            document.getElementById('editForm').action = '/inventory/edit/' + id;
+
+            // Trigger Modal
+            const myModal = new bootstrap.Modal(document.getElementById('editModal'));
+            myModal.show();
+        }
+    });
+    // Add an ID to your form: <form id="addInventoryForm">
+document.getElementById('addInventoryForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+
+    const res = await fetch('/inventory/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+
+    const result = await res.json();
+    if (result.success) {
+        location.reload(); // Success
+    } else {
+        // Trigger your Toast/Popup here
+        showNotify(result.message, "danger"); 
+    }
+};
+
+
+// --- Notification Function ---
+function showNotify(msg, type = 'success') {
+    const toastEl = document.getElementById('posToast');
+    const toastMsg = document.getElementById('toastMessage');
+    toastEl.className = `toast align-items-center text-white border-0 bg-${type === 'success' ? 'success' : 'danger'}`;
+    toastMsg.innerText = msg;
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
+}
+
+// --- Handle Add Product (AJAX) ---
+document.getElementById('addInventoryForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('addSubmitBtn');
+    btn.disabled = true;
+
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+        const res = await fetch('/inventory/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+
+        if (result.success) {
+            showNotify(result.message, "success");
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotify(result.message, "danger");
+            btn.disabled = false;
+        }
+    } catch (err) {
+        showNotify("Server Error", "danger");
+        btn.disabled = false;
+    }
+};
+
+// --- Handle Edit Button Click ---
+document.addEventListener('click', function (event) {
+    const editBtn = event.target.closest('.edit-button');
+    if (editBtn) {
+        document.getElementById('editSku').value = editBtn.getAttribute('data-sku');
+        document.getElementById('editName').value = editBtn.getAttribute('data-name');
+        document.getElementById('editCategory').value = editBtn.getAttribute('data-category');
+        document.getElementById('editCostPrice').value = editBtn.getAttribute('data-cost');
+        document.getElementById('editPrice').value = editBtn.getAttribute('data-price');
+        document.getElementById('editStock').value = editBtn.getAttribute('data-stock');
+        document.getElementById('editVendor').value = editBtn.getAttribute('data-vendor');
+        document.getElementById('editForm').action = '/inventory/edit/' + editBtn.getAttribute('data-id');
+        new bootstrap.Modal(document.getElementById('editModal')).show();
+    }
+});
+</script>
+
+<%- include('footer') %>

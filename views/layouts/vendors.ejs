@@ -1,0 +1,60 @@
+<%- include('header') %>
+
+<div class="container-fluid" style="padding-top: 100px;">
+    <main class="col-md-10 ms-sm-auto px-md-4">
+        <h2>Vendor Management</h2>
+
+        <div class="card p-4 mb-4 shadow-sm">
+            <h5>Add New Vendor</h5>
+            <form action="/vendors/add" method="POST" class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" name="name" class="form-control" placeholder="Vendor/Company Name" required>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" name="contact_person" class="form-control" placeholder="Contact Person">
+                </div>
+                <div class="col-md-2">
+                    <input type="text" name="phone" class="form-control" placeholder="Phone">
+                </div>
+                <div class="col-md-2">
+                    <input type="email" name="email" class="form-control" placeholder="Email">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Add Vendor</button>
+                </div>
+                <div class="col-12 mt-2">
+                    <textarea name="address" class="form-control" placeholder="Full Address" rows="2"></textarea>
+                </div>
+            </form>
+        </div>
+
+        <table class="table table-bordered bg-white shadow-sm">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Vendor Name</th>
+                    <th>Contact Person</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% vendors.forEach(vendor => { %>
+                    <tr>
+                        <td><%= vendor.id %></td>
+                        <td><strong><%= vendor.name %></strong></td>
+                        <td><%= vendor.contact_person %></td>
+                        <td><%= vendor.phone %></td>
+                        <td><%= vendor.email %></td>
+                        <td>
+                            <a href="/vendors/delete/<%= vendor.id %>" class="btn btn-danger btn-sm" onclick="return confirm('Delete this vendor?')">Delete</a>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </main>
+</div>
+
+<%- include('footer') %>

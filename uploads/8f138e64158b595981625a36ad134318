@@ -1,0 +1,101 @@
+ <%- include('header') %>
+
+<div class="container-fluid">
+    <div class="row">
+    
+    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 bg-light" style="padding-top: 100px;">
+        <h2>Inventory Management</h2>
+    <!-- ADD FORM -->
+    <form action="/inventory/add" method="POST" class="row g-3 mb-4">
+        <div class="col-md-2">
+            <input type="text" name="sku" class="form-control" placeholder="SKU" required>
+        </div>
+        <div class="col-md-3">
+            <input type="text" name="name" class="form-control" placeholder="Item Name" required>
+        </div>
+        <div class="col-md-2">
+            <input type="text" name="category" class="form-control" placeholder="Category">
+        </div>
+        <div class="col-md-2">
+            <input type="number" name="price" class="form-control" placeholder="Price" required>
+        </div>
+        <div class="col-md-2">
+            <input type="number" name="stock" class="form-control" placeholder="Stock" required>
+        </div>
+        <div class="col-md-1">
+            <button class="btn btn-primary">Add</button>
+        </div>
+    </form>
+
+    <!-- TABLE -->
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>SKU</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <% items.forEach(item => { %>
+                <tr>
+                    <td><%= item.sku %></td>
+                    <td><%= item.name %></td>
+                    <td><%= item.category %></td>
+                    <td>₹ <%= item.price %></td>
+                    <td><%= item.stock %></td>
+                    <td>
+                        <% if(item.stock > 10) { %>
+                            <span class="badge bg-success">In Stock</span>
+                        <% } else if(item.stock > 0) { %>
+                            <span class="badge bg-warning">Low Stock</span>
+                        <% } else { %>
+                            <span class="badge bg-danger">Out</span>
+                        <% } %>
+                    </td>
+                    <td>
+                        <a class="btn btn-sm btn-warning" href="/inventory/update/<%= item.id %>" class="btn btn-danger btn-sm" onclick="editItem(<%= item.id %>, '<%= item.sku %>', '<%= item.name %>', '<%= item.category %>', '<%= item.price %>', '<%= item.stock %>')"></a>>
+                                Edit
+                        </a>
+                        <a href="/inventory/delete/<%= item.id %>" class="btn btn-danger btn-sm">
+                            Delete
+                        </a>
+                    </td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+    </main>
+    </div>
+</div>
+<!-- EDIT MODAL -->
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form  method="POST" id="editForm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5>Edit Item</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <input type="text" name="sku" id="editSku" class="form-control mb-2" placeholder="SKU" required>
+          <input type="text" name="name" id="editName" class="form-control mb-2" placeholder="Name" required>
+          <input type="text" name="category" id="editCategory" class="form-control mb-2" placeholder="Category">
+          <input type="number" name="price" id="editPrice" class="form-control mb-2" placeholder="Price" required>
+          <input type="number" name="stock" id="editStock" class="form-control mb-2" placeholder="Stock" required>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-primary">Update</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<%- include('footer') %>

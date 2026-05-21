@@ -1,0 +1,192 @@
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// GLOBAL STATE: Lives outside DOMContentLoaded so it persists between tab switches
+let cart = [];
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  // --- SPA LOADING LOGIC ---
+  async function loadPage(url, push = true) {
+    try {
+      document.querySelector("main").innerHTML = "<div class='text-center mt-5'><div class='spinner-border text-primary'></div><p>Loading...</p></div>";
+
+      const res = await fetch(url, {
+        headers: { "X-Requested-With": "XMLHttpRequest" }
+      });
+
+      const html = await res.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+      const newMain = doc.querySelector("main");
+
+      //if (!newMain) return;
+
+      document.querySelector("main").innerHTML = newMain.innerHTML;
+
+      // Update active menu highlight
+      document.querySelectorAll(".sidebar a").forEach(link => {
+        link.classList.remove("active");
+        if (link.getAttribute("href") === url) {
+          link.classList.add("active");
+        }
+      });
+
+      if (push) window.history.pushState({}, "", url);
+      
+      // Re-run specific page scripts
+      runPageScripts(url);
+
+    } catch (err) {
+      console.error("SPA Load Error:", err);
+    }
+  }
+
+  // Handle Sidebar Navigation
+  document.addEventListener("click", function(e) {
+    const link = e.target.closest(".menu-link");
+    if (!link) return;
+    e.preventDefault();
+    loadPage(link.getAttribute("href"));
+  });
+
+  window.addEventListener("popstate", () => {
+    loadPage(location.pathname, false);
+  });
+
+  // --- GLOBAL CLICK DELEGATION (Covers Inventory & POS) ---
+  document.addEventListener('click', function (event) {
+    
+    // A. INVENTORY: Edit Button
+    const editBtn = event.target.closest('.edit-button');
+    if (editBtn) {
+        event.preventDefault();
+        const id = editBtn.getAttribute('data-id');
+        const modal = document.getElementById('editModal');
+        if (modal) {
+            document.getElementById('editSku').value = editBtn.getAttribute('data-sku');
+            document.getElementById('editName').value = editBtn.getAttribute('data-name');
+            document.getElementById('editCategory').value = editBtn.getAttribute('data-category');
+            document.getElementById('editPrice').value = editBtn.getAttribute('data-price');
+            document.getElementById('editStock').value = editBtn.getAttribute('data-stock');
+            // Updated to match your Express route /inventory/update/:id
+            document.getElementById('editForm').action = `/inventory/edit/${id}`;
+            new bootstrap.Modal(modal).show();
+        }
+    }
+
+    // B. POS: Add to Cart Button
+    const addBtn = event.target.closest('.pos-add-to-cart');
+    if (addBtn) {
+        const id = addBtn.getAttribute('data-id');
+        const name = addBtn.getAttribute('data-name');
+        const price = parseFloat(addBtn.getAttribute('data-price'));
+
+        let item = cart.find(p => p.id === id);
+        if (item) {
+            item.qty++;
+        } else {
+            cart.push({ id, name, price, qty: 1 });
+        }
+        renderCart();
+    }
+
+    // C. POS: Quantity Change Buttons (+/-)
+    if (event.target.classList.contains('qty-btn')) {
+        const index = event.target.getAttribute('data-index');
+        const change = parseInt(event.target.getAttribute('data-change'));
+        cart[index].qty += change;
+        if (cart[index].qty <= 0) cart.splice(index, 1);
+        renderCart();
+    }
+
+    // D. POS: Remove Item (x)
+    if (event.target.classList.contains('remove-item')) {
+        const index = event.target.getAttribute('data-index');
+        cart.splice(index, 1);
+        renderCart();
+    }
+
+    // E. POS: Checkout Button
+    if (event.target.id === 'checkoutBtn') {
+        processCheckout();
+    }
+  });
+
+  // --- POS HELPERS ---
+  function renderCart() {
+    const body = document.getElementById("cartBody");
+    if (!body) return; // Exit if not on POS page
+
+    body.innerHTML = "";
+    let total = 0;
+
+    cart.forEach((item, index) => {
+        let rowTotal = item.qty * item.price;
+        total += rowTotal;
+        body.innerHTML += `
+            <tr>
+                <td>${item.name}</td>
+                <td>
+                    <button class="btn btn-sm btn-light qty-btn" data-index="${index}" data-change="-1">-</button>
+                    <span class="mx-2">${item.qty}</span>
+                    <button class="btn btn-sm btn-light qty-btn" data-index="${index}" data-change="1">+</button>
+                </td>
+                <td>₹ ${rowTotal}</td>
+                <td><button class="btn btn-sm btn-danger remove-item" data-index="${index}">x</button></td>
+            </tr>`;
+    });
+    document.getElementById("grandTotal").innerText = total;
+  }
+
+  async function processCheckout() {
+    if (cart.length === 0) return alert("Cart is empty!");
+    
+    const payload = {
+        cart: cart,
+        paymentMethod: document.getElementById("paymentMethod").value,
+        customer_id: document.getElementById("customerSelect").value
+    };
+
+    try {
+        const res = await fetch("/pos/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if(data.success) {
+            cart = []; // Reset global cart
+            window.location.href = "/invoice/" + data.saleId;
+        } else {
+            alert("Checkout failed: " + data.error);
+        }
+    } catch (err) { console.error(err); }
+  }
+
+  // --- PAGE SPECIFIC INITIALIZATION ---
+  function runPageScripts(url) {
+    if (url.includes("dashboard")) {
+      const ctx = document.getElementById('salesChart');
+      if (ctx && typeof Chart !== "undefined") {
+          new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+              datasets: [{
+                label: 'Revenue',
+                data: [1200,1900,3000,500,2500,4000,1000],
+                borderColor: '#4f46e5',
+                tension: 0.4,
+                fill: true
+              }]
+            }
+          });
+      }
+    }
+    // Ensure cart is visible if navigating back to POS
+    if (url.includes("pos")) {
+        renderCart();
+    }
+  }
+});
+</script>

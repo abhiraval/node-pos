@@ -1,0 +1,348 @@
+<%- include('header') %>
+
+<div class="container-fluid" style="padding-top: 100px;">
+  <main class="col-md-10 ms-sm-auto px-md-4 bg-light">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2><i class="bi bi-cart-plus me-2"></i>Purchase Orders</h2>
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPurchaseModal">
+        <i class="bi bi-plus-circle me-1"></i> New Purchase
+      </button>
+    </div>
+
+    <!-- ✅ SUCCESS / ERROR ALERT (outside modal, for success reload message) -->
+    <div id="alertBox" class="alert d-none" role="alert"></div>
+
+    <!-- ====== SUMMARY CARDS ====== -->
+    <div class="row g-3 mb-4">
+
+      <div class="col-12 col-sm-6 col-xl-4">
+        <div class="card border-0 shadow-sm p-3 border-start border-primary border-4">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="text-muted small">Total Orders</div>
+              <div class="h4 mb-0 text-primary"><%= purchases.length %></div>
+            </div>
+            <i class="bi bi-cart-check fs-2 text-primary"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-sm-6 col-xl-4">
+        <div class="card border-0 shadow-sm p-3 border-start border-success border-4">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="text-muted small">Total Spent</div>
+              <div class="h4 mb-0 text-success">
+                ₹ <%= purchases.reduce((sum, p) => sum + parseFloat(p.total_amount || 0), 0).toFixed(2) %>
+              </div>
+            </div>
+            <i class="bi bi-currency-rupee fs-2 text-success"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-sm-6 col-xl-4">
+        <div class="card border-0 shadow-sm p-3 border-start border-warning border-4">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="text-muted small">Total Vendors</div>
+              <div class="h4 mb-0 text-warning"><%= vendors.length %></div>
+            </div>
+            <i class="bi bi-truck fs-2 text-warning"></i>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ====== PURCHASES TABLE ====== -->
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-white fw-bold">Purchase History</div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover mb-0">
+            <thead class="table-dark">
+              <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>Vendor</th>
+                <th>Total Amount</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (purchases.length > 0) { %>
+                <% purchases.forEach((purchase, index) => { %>
+                  <tr>
+                    <td><%= index + 1 %></td>
+                    <td><%= new Date(purchase.purchase_date).toLocaleDateString('en-IN') %></td>
+                    <td><strong><%= purchase.vendor_name %></strong></td>
+                    <td>₹ <%= parseFloat(purchase.total_amount).toFixed(2) %></td>
+                    <td><span class="badge bg-success">Completed</span></td>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox fs-4 d-block mb-2"></i>
+                    No purchase orders yet. Click <strong>New Purchase</strong> to add one.
+                  </td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+
+<!-- ====================================================== -->
+<!-- ============   ADD PURCHASE MODAL   ================= -->
+<!-- ====================================================== -->
+<div class="modal fade" id="addPurchaseModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title"><i class="bi bi-cart-plus me-2"></i>New Purchase Order</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- Alert inside modal so errors are visible -->
+        <div id="modalAlert" class="alert d-none" role="alert"></div>
+
+        <!-- Step 1: Select Vendor -->
+        <div class="mb-4">
+          <label class="form-label fw-bold">1. Select Vendor</label>
+          <select id="vendorSelect" class="form-select">
+            <option value="">-- Select Vendor --</option>
+            <% vendors.forEach(vendor => { %>
+              <option value="<%= vendor.id %>"><%= vendor.name %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <!-- Step 2: Add Items -->
+        <div class="mb-3">
+          <label class="form-label fw-bold">2. Add Items</label>
+          <div class="table-responsive">
+            <table class="table table-bordered" id="itemsTable">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 40%">Product</th>
+                  <th style="width: 20%">Qty</th>
+                  <th style="width: 25%">Cost Price (₹)</th>
+                  <th style="width: 15%">Action</th>
+                </tr>
+              </thead>
+              <tbody id="itemsBody">
+                <!-- First row added by default via JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addItemRow()">
+            <i class="bi bi-plus-circle me-1"></i> Add Another Item
+          </button>
+        </div>
+
+        <!-- Order Total -->
+        <div class="text-end mt-3">
+          <div class="fs-5 fw-bold text-primary">
+            Order Total: ₹ <span id="orderTotal">0.00</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="submitPurchase()">
+          <i class="bi bi-check-circle me-1"></i> Confirm Purchase
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<script>
+  // ── Products loaded from inventory for dropdowns ──
+  let allProducts = [];
+
+  // Load all inventory products on page load
+  async function loadProducts() {
+    try {
+      const res = await fetch('/inventory-data');
+      allProducts = await res.json();
+    } catch (err) {
+      console.error("Could not load products:", err);
+    }
+  }
+  loadProducts();
+
+  // ── Build one product <select> dropdown ──
+  function buildProductSelect() {
+    let opts = `<option value="">-- Select Product --</option>`;
+    allProducts.forEach(p => {
+      opts += `<option value="${p.id}" data-cost="${p.cost_price || 0}">${p.name} (SKU: ${p.sku})</option>`;
+    });
+    return opts;
+  }
+
+  // ── Add a new item row ──
+  function addItemRow() {
+    const tbody = document.getElementById('itemsBody');
+    const rowIndex = tbody.rows.length;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <select class="form-select product-select" data-row="${rowIndex}" onchange="onProductChange(this)">
+          ${buildProductSelect()}
+        </select>
+      </td>
+      <td>
+        <input type="number" class="form-control qty-input" value="1" min="1"
+               data-row="${rowIndex}" oninput="recalcTotal()">
+      </td>
+      <td>
+        <input type="number" class="form-control cost-input" placeholder="0.00"
+               step="0.01" min="0" data-row="${rowIndex}" oninput="recalcTotal()">
+      </td>
+      <td class="text-center">
+        <button class="btn btn-sm btn-danger" onclick="removeRow(this)" title="Remove">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  // ── Auto-fill cost price when product is selected ──
+  function onProductChange(select) {
+    const row = select.closest('tr');
+    const costInput = row.querySelector('.cost-input');
+    const selectedOption = select.options[select.selectedIndex];
+    const cost = selectedOption.getAttribute('data-cost');
+    if (cost && cost > 0) {
+      costInput.value = parseFloat(cost).toFixed(2);
+    }
+    recalcTotal();
+  }
+
+  // ── Remove a row ──
+  function removeRow(btn) {
+    const tbody = document.getElementById('itemsBody');
+    if (tbody.rows.length <= 1) {
+      return alert("At least one item is required.");
+    }
+    btn.closest('tr').remove();
+    recalcTotal();
+  }
+
+  // ── Recalculate order total ──
+  function recalcTotal() {
+    let total = 0;
+    document.querySelectorAll('#itemsBody tr').forEach(row => {
+      const qty = parseFloat(row.querySelector('.qty-input')?.value) || 0;
+      const cost = parseFloat(row.querySelector('.cost-input')?.value) || 0;
+      total += qty * cost;
+    });
+    document.getElementById('orderTotal').textContent = total.toFixed(2);
+  }
+
+  // ── Submit purchase order via AJAX ──
+  async function submitPurchase() {
+    const vendor_id = document.getElementById('vendorSelect').value;
+
+    if (!vendor_id) {
+      return showAlert('danger', 'Please select a vendor before submitting.');
+    }
+
+    const rows = document.querySelectorAll('#itemsBody tr');
+    const items = [];
+
+    let valid = true;
+    rows.forEach(row => {
+      const product_id = row.querySelector('.product-select').value;
+      const qty = parseInt(row.querySelector('.qty-input').value);
+      const cost_price = parseFloat(row.querySelector('.cost-input').value);
+
+      if (!product_id || !qty || !cost_price) {
+        valid = false;
+        return;
+      }
+      items.push({ product_id, qty, cost_price });
+    });
+
+    if (!valid || items.length === 0) {
+      return showAlert('danger', 'Please fill in all item fields (Product, Qty, Cost Price).');
+    }
+
+    try {
+      const res = await fetch('/purchases/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vendor_id, items })
+      });
+
+      const data = await res.json();
+
+      console.log("Server response:", data); // 👈 helps debug in browser console
+
+      if (data.success) {
+        // ✅ FIX: getInstance can return null if opened via data-bs-toggle
+        // So we get OR create the instance to safely call hide()
+        const modalEl = document.getElementById('addPurchaseModal');
+        const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        modalInstance.hide();
+
+        showAlert('success', '✅ Purchase recorded successfully! Stock has been updated.');
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        // data.error is what server sends, data.message is fallback
+        const errMsg = data.error || data.message || 'Purchase failed. Check your terminal for details.';
+        showModalAlert('danger', '❌ ' + errMsg);
+      }
+    } catch (err) {
+      console.error(err);
+      showAlert('danger', '❌ Network error. Please try again.');
+    }
+  }
+
+  // ── Show alert OUTSIDE modal (for success after reload) ──
+  function showAlert(type, message) {
+    const box = document.getElementById('alertBox');
+    box.className = `alert alert-${type}`;
+    box.textContent = message;
+    box.classList.remove('d-none');
+    setTimeout(() => box.classList.add('d-none'), 5000);
+  }
+
+  // ── Show alert INSIDE modal (for errors while modal is open) ──
+  function showModalAlert(type, message) {
+    const box = document.getElementById('modalAlert');
+    box.className = `alert alert-${type}`;
+    box.textContent = message;
+    box.classList.remove('d-none');
+  }
+
+  // ── Reset modal when opened ──
+  document.getElementById('addPurchaseModal').addEventListener('show.bs.modal', function () {
+    document.getElementById('vendorSelect').value = '';
+    document.getElementById('itemsBody').innerHTML = '';
+    document.getElementById('orderTotal').textContent = '0.00';
+    document.getElementById('modalAlert').className = 'alert d-none'; // clear old errors
+    addItemRow();
+  });
+</script>
+
+<%- include('footer') %>

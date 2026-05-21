@@ -1,0 +1,88 @@
+<%- include('header') %>
+
+<div class="container-fluid" style="padding-top: 100px;">
+    <main class="col-md-10 ms-sm-auto px-md-4 bg-light">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>User Management</h2>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                <i class="bi bi-person-plus"></i> Add New Staff
+            </button>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Username</th>
+                            <th>Store Name</th>
+                            <th>Role</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% users.forEach(u => { %>
+                            <tr>
+                                <td><strong><%= u.username %></strong></td>
+                                <td><%= u.Storename %></td>
+                                <td>
+                                    <span class="badge <%= u.role === 'admin' ? 'bg-primary' : 'bg-secondary' %>">
+                                        <%= u.role.toUpperCase() %>
+                                    </span>
+                                </td>
+                                <td>
+                                    <% if (user.id !== u.id) { %>
+                                        <a href="/users/delete/<%= u.id %>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this user?')">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    <% } else { %>
+                                        <span class="text-muted small">Current User</span>
+                                    <% } %>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="modal fade" id="addUserModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <form action="/users/add" method="POST">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Add Staff Member</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">Username</label>
+                                <input type="text" name="username" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Password</label>
+                                <input type="password" name="password" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Store Name</label>
+                                <input type="text" name="storename" class="form-control" value="<%= user.Storename %>" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Role</label>
+                                <select name="role" class="form-select">
+                                    <option value="cashier">Cashier</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary w-100">Create Account</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+</div>
+
+<%- include('footer') %>

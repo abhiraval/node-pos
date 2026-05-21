@@ -1,0 +1,228 @@
+<%- include('header') %>
+
+<div class="container-fluid">
+  <div class="row">
+
+    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 bg-light" style="padding-top: 80px;">
+
+      <!-- DASHBOARD CARDS -->
+      <div class="row g-3">
+
+        <!-- Total Products -->
+        <div class="col-12 col-sm-6 col-xl-3">
+          <div class="card border-0 shadow-sm p-3 border-start border-primary border-4">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div class="text-muted small">Total Products</div>
+                <div class="h4 mb-0 text-primary"><%= totalProducts %></div>
+              </div>
+              <i class="bi bi-box-seam fs-2 text-primary"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Total Sales -->
+        <div class="col-12 col-sm-6 col-xl-3">
+          <div class="card border-0 shadow-sm p-3 border-start border-success border-4">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div class="text-muted small">Total Sales</div>
+                <div class="h4 mb-0 text-success"><%= totalSales %></div>
+              </div>
+              <i class="bi bi-cart-check fs-2 text-success"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Today Revenue -->
+        <div class="col-12 col-sm-6 col-xl-3">
+          <div class="card border-0 shadow-sm p-3 border-start border-warning border-4">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div class="text-muted small">Today Revenue</div>
+                <div class="h4 mb-0 text-warning">₹ <%= todayRevenue %></div>
+              </div>
+              <i class="bi bi-currency-rupee fs-2 text-warning"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+  <div class="card border-0 shadow-sm p-3 border-start border-primary border-4">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <div class="text-muted small">Customer Dues (Receivables)</div>
+        <div class="h4 mb-0 text-primary">₹ <%= parseFloat(totalReceivables).toFixed(2) %></div>
+      </div>
+      <i class="bi bi-person-badge fs-2 text-primary"></i>
+    </div>
+  </div>
+</div>
+
+<div class="col-12 col-sm-6 col-xl-3">
+  <div class="card border-0 shadow-sm p-3 border-start border-dark border-4">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <div class="text-muted small">Vendor Dues (Payables)</div>
+        <div class="h4 mb-0 text-dark">₹ <%= parseFloat(totalPayables).toFixed(2) %></div>
+      </div>
+      <i class="bi bi-truck fs-2 text-dark"></i>
+    </div>
+  </div>
+</div>
+        
+
+        <!-- Low Stock -->
+        <div class="col-12 col-sm-6 col-xl-3">
+          <div class="card border-0 shadow-sm p-3 border-start border-danger border-4">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div class="text-muted small">Low Stock Items</div>
+                <div class="h4 mb-0 text-danger"><%= lowStock %></div>
+              </div>
+              <i class="bi bi-exclamation-triangle fs-2 text-danger"></i>
+            </div>
+          </div>
+        </div>
+
+        <% if (user.role === 'admin') { %>
+        <div class="col-12 col-sm-6 col-xl-3">
+          <div class="card border-0 shadow-sm p-3 border-start border-info border-4">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div class="text-muted small">Today's Net Profit</div>
+                <div class="h4 mb-0 text-info">₹ <%= todayProfit %></div>
+              </div>
+              <i class="bi bi-graph-up-arrow fs-2 text-info"></i>
+            </div>
+          </div>
+        </div>
+        <% } %>
+
+      </div>
+      <div class="card mt-4 shadow-sm">
+
+<div class="container-fluid">
+  <div class="row">
+    <main class="col-md-12 ms-sm-auto px-md-4 bg-light">
+
+      <div class="row g-3">
+        </div>
+
+      <div class="row">
+        <div class="col-md-8">
+          <div class="card mt-4 shadow-sm border-0">
+            <div class="card-header bg-white fw-bold">Sales Analytics (Last 7 Days)</div>
+            <div class="card-body">
+              <canvas id="salesChart" style="max-height: 300px;"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="card mt-4 shadow-sm border-0">
+            <div class="card-header bg-white fw-bold">Recent Sales</div>
+            <div class="card-body p-0"> <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Invoice</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% recentSales.forEach(s => { %>
+                      <tr>
+                        <td class="small"><%= s.invoice_no %></td>
+                        <td class="fw-bold">₹ <%= s.total %></td>
+                      </tr>
+                    <% }) %>
+                  </tbody>
+                </table>
+              </div>
+              <div class="p-2 text-center">
+                 <a href="/sales" class="btn btn-sm btn-link">View All</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4 shadow-sm border-0">
+            <div class="card-header bg-white fw-bold text-danger">Products Needing Restock</div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Product Name</th>
+                      <th>SKU</th>
+                      <th>Current Stock</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% if (lowStockProducts.length > 0) { %>
+                      <% lowStockProducts.forEach(p => { %>
+                        <tr>
+                          <td><%= p.name %></td>
+                          <td><code><%= p.sku %></code></td>
+                          <td><span class="badge bg-danger"><%= p.stock %> left</span></td>
+                          <td><a href="/inventory" class="btn btn-sm btn-outline-primary py-0">Update</a></td>
+                        </tr>
+                      <% }) %>
+                    <% } else { %>
+                      <tr>
+                        <td colspan="4" class="text-center text-muted py-3">All stock levels are healthy!</td>
+                      </tr>
+                    <% } %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+    </main>
+  </div>
+</div>
+
+
+
+    </main>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  const ctx = document.getElementById('salesChart').getContext('2d');
+  
+  // Note: In a real app, you'd pass this data from your Node.js route
+  // For now, these are placeholder values
+  const salesChart = new Chart(ctx, {
+    type: 'line', 
+    data: {
+      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      datasets: [{
+        label: 'Revenue (₹)',
+        data: [1200, 1900, 3000, 500, 2500, 4000, <%= todayRevenue %>],
+        borderColor: '#0d6efd',
+        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+        fill: true,
+        tension: 0.4, // Makes the line curved
+        borderWidth: 3,
+        pointRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false } // Hide legend to keep it clean
+      },
+      scales: {
+        y: { beginAtZero: true, grid: { display: false } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+</script>
+<%- include('footer') %>
